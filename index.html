@@ -3,27 +3,41 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Kalkulator Bokashi (Dosis & Bahan Baku)</title>
+  <title>KALBOK — Kalkulator Bokashi Hortikultura</title>
   <style>
     :root{
       --border:#e6e6e6;
       --muted:#666;
       --bg:#fafafa;
       --card:#fff;
+
       --accent:#1f6f4a;
-      --warnbg:#fff8e1;
-      --warnbd:#ffe5a3;
+      --accent-bg:#eef8f1;
+
+      --danger:#b00020;
+      --danger-bg:#fff0f0;
+
+      --green-bg:#eaf7ef;
+      --green-bd:#bfe6cd;
+
+      --btn:#fff;
+      --btn-bd:#cfcfcf;
     }
+
     body{
       font-family: system-ui, Arial, sans-serif;
       background: var(--bg);
       color:#222;
-      max-width: 980px;
+      max-width: 1100px;
       margin: 22px auto;
       padding: 0 16px;
+      font-size: 18px;
     }
-    h1{ margin: 0 0 6px; }
-    .muted{ color: var(--muted); font-size: 14px; line-height: 1.45; }
+
+    h1{ margin: 0 0 8px; font-size: 34px; }
+    h2{ font-size: 24px; margin: 0 0 10px; }
+    .muted{ color: var(--muted); font-size: 16px; line-height: 1.5; }
+
     .card{
       background: var(--card);
       border: 1px solid var(--border);
@@ -31,211 +45,278 @@
       padding: 16px;
       margin-top: 14px;
     }
+
     .grid{
       display:grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr; /* kiri bahan, kanan dosis */
       gap: 14px;
+      align-items: start;
     }
-    @media (max-width: 820px){ .grid{ grid-template-columns: 1fr; } }
+    @media (max-width: 920px){ .grid{ grid-template-columns: 1fr; } }
 
-    label{ display:block; font-weight:600; margin: 10px 0 6px; }
-    input, select{
+    label{
+      display:block;
+      font-weight: 800;
+      margin: 12px 0 8px;
+      font-size: 18px;
+    }
+
+    input{
       width: 100%;
-      max-width: 420px;
-      padding: 10px;
-      font-size: 16px;
+      max-width: 560px;
+      padding: 12px 12px;
+      font-size: 18px;
       border: 1px solid #cfcfcf;
-      border-radius: 10px;
+      border-radius: 12px;
       background:#fff;
+      outline: none;
     }
+    input.invalid{
+      border-color: var(--danger);
+      background: var(--danger-bg);
+    }
+
     .row{ display:flex; gap:12px; flex-wrap: wrap; align-items: end; }
-    .row > div{ min-width: 220px; }
-    .pill{
-      display:inline-block;
-      padding: 5px 10px;
-      border-radius: 999px;
-      background:#f1f1f1;
-      font-size: 13px;
-      margin: 6px 6px 0 0;
+    .row > div{ min-width: 280px; }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap: wrap;
+      align-items:center;
+      justify-content: space-between;
+      margin-bottom: 8px;
     }
-    table{
-      width:100%;
-      border-collapse: collapse;
+
+    .btn{
+      border: 1px solid var(--btn-bd);
+      background: var(--btn);
+      color:#222;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 16px;
+      cursor:pointer;
+    }
+    .btn:hover{ background:#f5f5f5; }
+
+    /* pilihan cara hitung (kartu besar) */
+    .choice-wrap{
+      display:flex;
+      gap:12px;
+      flex-wrap: wrap;
       margin-top: 10px;
     }
-    th, td{
-      padding: 10px 8px;
-      border-bottom: 1px solid #eee;
-      vertical-align: top;
-      text-align: left;
+    .choice{
+      flex: 1;
+      min-width: 280px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      cursor: pointer;
+      user-select:none;
+      background:#fff;
+      transition: border-color .15s, background .15s;
     }
-    th{ background:#fcfcfc; }
-    .note{
-      background: var(--warnbg);
-      border: 1px solid var(--warnbd);
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-size: 14px;
+    .choice .title{ font-weight: 900; font-size: 20px; margin-bottom: 6px; }
+    .choice .sub{ color: var(--muted); font-size: 14px; line-height: 1.4; font-weight: 500; }
+    .choice.active{
+      border-color: var(--accent);
+      background: var(--accent-bg);
+    }
+    .choice input{ display:none; }
+
+    /* kotak rekomendasi dosis */
+    .dose-box{
+      background: var(--green-bg);
+      border: 1px solid var(--green-bd);
+      border-radius: 14px;
+      padding: 12px;
       margin-top: 12px;
     }
-    .ok{
-      background:#eef8f1;
-      border: 1px solid #cfe9d8;
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-size: 14px;
-      margin-top: 12px;
+    .dose-box .head{
+      font-weight: 900;
+      margin-bottom: 8px;
+      font-size: 18px;
     }
+    .dose-box .desc{
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .dose-options{
+      display:flex;
+      gap:10px;
+      flex-wrap: wrap;
+    }
+    .dose-opt{
+      border: 1px solid #b9d9c6;
+      background:#fff;
+      border-radius: 14px;
+      padding: 10px 12px;
+      cursor:pointer;
+      min-width: 170px;
+      flex: 1;
+    }
+    .dose-opt .k{ font-weight: 900; }
+    .dose-opt .v{ color: var(--muted); font-size: 14px; margin-top: 2px; }
+    .dose-opt.active{
+      outline: 2px solid var(--accent);
+      border-color: var(--accent);
+    }
+
+    table{ width:100%; border-collapse: collapse; margin-top: 10px; font-size: 17px; }
+    th, td{ padding: 10px 8px; border-bottom: 1px solid #eee; vertical-align: top; text-align:left; }
+    th{ background:#fcfcfc; font-weight:800; }
+
+    .small{ font-size: 15px; color: var(--muted); }
+    .error{ color: var(--danger); font-size: 15px; margin-top: 12px; line-height: 1.4; }
     .hide{ display:none; }
-    .accent{ color: var(--accent); font-weight:700; }
-    hr{ border:0; border-top:1px solid var(--border); margin: 14px 0; }
-    .small{ font-size: 13px; color: var(--muted); }
-    .error{ color:#b00020; font-size: 13px; margin-top:8px; }
+    hr{ border:0; border-top:1px solid var(--border); margin: 16px 0; }
   </style>
 </head>
 
 <body>
-  <h1>Kalkulator Bokashi: Dosis & Kebutuhan Bahan Baku</h1>
+  <h1>KALBOK — Kalkulator Bokashi (Hortikultura)</h1>
   <p class="muted">
-    Petani cukup mengetik <strong>luas lahan (ha)</strong>. Desimal gunakan <strong>koma</strong>, contoh: <span class="pill">0,25</span>.
+    Pilih cara hitung, lalu isi 1 kolom data. Desimal gunakan <strong>koma</strong> (contoh: 0,25).
   </p>
 
   <div class="card">
-    <div class="row">
-      <div>
-        <label for="mode">Mode kalkulator</label>
-        <select id="mode">
-          <option value="dosis">1) Hitung DOSIS (total bokashi dari luas)</option>
-          <option value="bahan">2) Hitung BAHAN BAKU (luas → dosis → bahan)</option>
-        </select>
-      </div>
+    <div class="actions">
+      <h2 style="margin:0;">1) Pilih cara hitung</h2>
+      <button class="btn" id="ulangBtn" type="button">Ulangi</button>
+    </div>
 
-      <div>
-        <label for="luasHa">Luas lahan (ha)</label>
-        <input id="luasHa" type="text" inputmode="decimal" placeholder="Contoh: 0,25" value="1">
-        <div class="small">Gunakan koma untuk desimal (mis. 1,5 ha).</div>
+    <div class="choice-wrap" role="radiogroup" aria-label="Pilihan cara hitung">
+      <label class="choice active" id="choiceLuas">
+        <input type="radio" name="basis" id="basisLuas" checked />
+        <div class="title">Berdasarkan Luas Lahan</div>
+        <div class="sub">Rekomendasi dosis: 10–25 ton/ha (info tambahan).</div>
+      </label>
+
+      <label class="choice" id="choiceTanaman">
+        <input type="radio" name="basis" id="basisTanaman" />
+        <div class="title">Berdasarkan Jumlah Tanaman</div>
+        <div class="sub">Rekomendasi dosis: 112–450 g/tanaman (info tambahan).</div>
+      </label>
+    </div>
+
+    <hr>
+
+    <h2 style="margin:0 0 10px;">2) Isi data</h2>
+
+    <!-- INPUT: LUAS -->
+    <div id="panelLuas">
+      <label for="luasHa">Luas lahan (ha)</label>
+      <input id="luasHa" type="text" inputmode="decimal" placeholder="Contoh: 0,25" value="">
+      <div class="small">Wajib diisi.</div>
+    </div>
+
+    <!-- INPUT: TANAMAN -->
+    <div id="panelTanaman" class="hide">
+      <label for="jumlahTanaman">Jumlah tanaman (buah)</label>
+      <input id="jumlahTanaman" type="text" inputmode="numeric" placeholder="Contoh: 500" value="">
+      <div class="small">Wajib diisi.</div>
+    </div>
+
+    <!-- PILIHAN DOSIS (bukan input type) -->
+    <div class="dose-box" id="doseBox">
+      <div class="head">Pilih dosis rekomendasi</div>
+      <div class="desc" id="doseDesc">-</div>
+
+      <div class="dose-options">
+        <div class="dose-opt" id="doseLow" role="button" tabindex="0">
+          <div class="k">Rendah</div>
+          <div class="v" id="doseLowVal">-</div>
+        </div>
+        <div class="dose-opt active" id="doseMed" role="button" tabindex="0">
+          <div class="k">Sedang</div>
+          <div class="v" id="doseMedVal">-</div>
+        </div>
+        <div class="dose-opt" id="doseHigh" role="button" tabindex="0">
+          <div class="k">Tinggi</div>
+          <div class="v" id="doseHighVal">-</div>
+        </div>
       </div>
     </div>
 
     <div id="err" class="error hide"></div>
-
-    <hr>
-
-    <div class="grid">
-      <div>
-        <h3 style="margin:0 0 6px;">Dosis Bokashi</h3>
-        <p class="muted" style="margin:0 0 8px;">
-          Default: <span class="pill">40 ton/ha</span> (ekuivalen: <span class="pill">400 g/polybag</span>).
-        </p>
-
-        <div class="row">
-          <div>
-            <label for="tHa">Dosis (ton/ha)</label>
-            <input id="tHa" type="text" inputmode="decimal" value="40">
-            <div class="small">Boleh desimal pakai koma.</div>
-          </div>
-          <div>
-            <label for="gPolybag">Ekuivalensi (g/polybag)</label>
-            <input id="gPolybag" type="text" inputmode="numeric" value="400">
-            <div class="small">Sinkron: ton/ha = 0,1 × g/polybag</div>
-          </div>
-        </div>
-
-        <div class="note">
-          <strong>Catatan konversi dosis:</strong><br>
-          Berdasar ekuivalensi: <strong>400 g/polybag = 40 ton/ha</strong>, sehingga:<br>
-          <span class="accent">ton/ha = 0,1 × (g/polybag)</span> dan <span class="accent">g/polybag = 10 × (ton/ha)</span>.
-        </div>
-      </div>
-
-      <div>
-        <h3 style="margin:0 0 6px;">Hasil Kebutuhan Bokashi</h3>
-        <table aria-label="Hasil kebutuhan bokashi">
-          <thead>
-            <tr><th>Komponen</th><th>Nilai</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Luas</td><td id="luasOut">-</td></tr>
-            <tr><td>Total bokashi</td><td id="totalKgOut">-</td></tr>
-            <tr><td>Setara ton</td><td id="totalTonOut">-</td></tr>
-            <tr><td>Perkiraan karung 25 kg</td><td id="karung25Out">-</td></tr>
-            <tr><td>Kebutuhan per m²</td><td id="perM2Out">-</td></tr>
-          </tbody>
-        </table>
-
-        <div class="ok">
-          <strong>Interpretasi cepat:</strong> “Total bokashi (kg)” adalah jumlah pupuk yang perlu disiapkan untuk luas yang diinput.
-        </div>
-      </div>
-    </div>
   </div>
 
-  <div class="card" id="panelBahan">
-    <h2 style="margin:0 0 6px;">Kebutuhan Bahan Baku (untuk memproduksi bokashi)</h2>
-    <p class="muted" style="margin:0 0 10px;">
-      Bahan baku dihitung dari total bokashi yang dibutuhkan, lalu diproyeksikan ke resep berbasis <strong>kotoran sapi</strong>.
-    </p>
+  <div class="grid">
+    <!-- KIRI: BAHAN BAKU -->
+    <div class="card">
+      <h2 style="margin:0 0 10px;">Kebutuhan Bahan Baku (kiri)</h2>
+      <p class="muted" style="margin:0 0 10px;">
+        Dihitung dari total bokashi yang dibutuhkan, diproyeksikan ke resep berbasis <strong>kotoran sapi</strong>.
+      </p>
 
-    <div class="note">
-      <strong>Asumsi resep bahan (berbasis bobot kotoran sapi):</strong>
-      <ul style="margin:8px 0 0 18px;">
-        <li>Sekam = <strong>10%</strong> dari kotoran sapi</li>
-        <li>Dedak = <strong>1%–2%</strong> dari kotoran sapi (rentang)</li>
-        <li>PTOC = <strong>1 L per 500 kg</strong> kotoran (0,002 L/kg)</li>
-        <li>Gula pasir = <strong>500 g per 500 kg</strong> kotoran (1 g/kg)</li>
-        <li>Air: <strong>secukupnya</strong> (tidak dihitung otomatis)</li>
-      </ul>
-      <div class="small" style="margin-top:8px;">
-        Dedak pada sumber gambar tampak tidak konsisten (angka vs %). Kalkulator memakai rentang 1–2% agar konsisten dengan 5–10 kg per 500 kg.
+      <div class="small">
+        Asumsi resep: Sekam 10% • Dedak 1–2% • PTOC 1 L/500 kg kotoran • Gula 1 g/kg kotoran • Air secukupnya
       </div>
+
+      <table aria-label="Hasil kebutuhan bahan baku">
+        <thead>
+          <tr><th>Bahan</th><th>Kebutuhan (estimasi)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Kotoran sapi (perkiraan)</td><td id="kotoranOut">-</td></tr>
+          <tr><td>Sekam</td><td id="sekamOut">-</td></tr>
+          <tr><td>Dedak</td><td id="dedakOut">-</td></tr>
+          <tr><td>PTOC</td><td id="ptocOut">-</td></tr>
+          <tr><td>Gula pasir</td><td id="gulaOut">-</td></tr>
+          <tr><td>Perkiraan “batch” 500 kg kotoran</td><td id="batchOut">-</td></tr>
+        </tbody>
+      </table>
     </div>
 
-    <table aria-label="Hasil kebutuhan bahan baku">
-      <thead>
-        <tr><th>Bahan</th><th>Kebutuhan (estimasi)</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Kotoran sapi (perkiraan)</td><td id="kotoranOut">-</td></tr>
-        <tr><td>Sekam (10% dari kotoran)</td><td id="sekamOut">-</td></tr>
-        <tr><td>Dedak padi (1%–2% dari kotoran)</td><td id="dedakOut">-</td></tr>
-        <tr><td>PTOC (1 L per 500 kg kotoran)</td><td id="ptocOut">-</td></tr>
-        <tr><td>Gula pasir (1 g per 1 kg kotoran)</td><td id="gulaOut">-</td></tr>
-        <tr><td>Perkiraan “batch” resep 500 kg kotoran</td><td id="batchOut">-</td></tr>
-      </tbody>
-    </table>
+    <!-- KANAN: DOSIS & KEBUTUHAN -->
+    <div class="card">
+      <h2 style="margin:0 0 10px;">Kebutuhan Bokashi (kanan)</h2>
+
+      <table aria-label="Hasil kebutuhan bokashi">
+        <thead>
+          <tr><th>Komponen</th><th>Nilai</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Cara hitung</td><td id="basisOut">-</td></tr>
+          <tr><td>Luas</td><td id="luasOut">-</td></tr>
+          <tr><td>Jumlah tanaman</td><td id="tanamanOut">-</td></tr>
+          <tr><td>Dosis terpilih</td><td id="dosisOut">-</td></tr>
+          <tr><td>Total bokashi</td><td id="totalKgOut">-</td></tr>
+          <tr><td>Setara ton</td><td id="totalTonOut">-</td></tr>
+          <tr><td>Perkiraan karung 25 kg</td><td id="karung25Out">-</td></tr>
+          <tr><td>Info per m² (jika luas)</td><td id="perM2Out">-</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <script>
-    // ====== Helpers: parse "id" number with comma decimal ======
-    // Accept examples: "0,25", "1.000,5", "1000", "1 000,5"
+    // ===== Parsing angka Indonesia (koma desimal) =====
     function parseIdNumber(str) {
       if (str === null || str === undefined) return NaN;
       let s = String(str).trim();
       if (!s) return NaN;
-
-      // remove spaces
       s = s.replace(/\s+/g, "");
-
-      // If it contains both '.' and ',', assume '.' are thousand separators and ',' decimal
-      // -> remove dots, replace comma with dot
       if (s.includes(",") && s.includes(".")) {
         s = s.replace(/\./g, "").replace(",", ".");
       } else if (s.includes(",")) {
-        // only comma -> decimal comma
         s = s.replace(",", ".");
       }
-      // else only dot or plain digits -> Number can handle
-
       const x = Number(s);
       return Number.isFinite(x) ? x : NaN;
     }
 
+    // ===== Formatter output id-ID =====
+    const nf0 = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 });
     const nf2 = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 });
     const nf3 = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 3 });
     const nf4 = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 4 });
+
     function fmtId(x, unit="", digits=2) {
       if (!Number.isFinite(x)) return "-";
-      const nf = digits === 4 ? nf4 : (digits === 3 ? nf3 : nf2);
+      const nf = digits===0 ? nf0 : (digits===4 ? nf4 : (digits===3 ? nf3 : nf2));
       return `${nf.format(x)}${unit ? " " + unit : ""}`;
     }
     function rangeId(min, max, unit="", digits=2) {
@@ -243,25 +324,42 @@
       return `${fmtId(min, unit, digits)} – ${fmtId(max, unit, digits)}`;
     }
 
-    // ====== Elements ======
+    // ===== DOM =====
     const $ = (id) => document.getElementById(id);
 
-    const modeEl = $("mode");
-    const luasHaEl = $("luasHa");
-    const tHaEl = $("tHa");
-    const gPolybagEl = $("gPolybag");
-    const panelBahan = $("panelBahan");
+    const choiceLuas = $("choiceLuas");
+    const choiceTanaman = $("choiceTanaman");
+    const basisLuasEl = $("basisLuas");
+    const basisTanamanEl = $("basisTanaman");
 
+    const panelLuas = $("panelLuas");
+    const panelTanaman = $("panelTanaman");
+
+    const luasHaEl = $("luasHa");
+    const jumlahTanamanEl = $("jumlahTanaman");
+
+    const doseDesc = $("doseDesc");
+    const doseLow = $("doseLow");
+    const doseMed = $("doseMed");
+    const doseHigh = $("doseHigh");
+    const doseLowVal = $("doseLowVal");
+    const doseMedVal = $("doseMedVal");
+    const doseHighVal = $("doseHighVal");
+
+    const ulangBtn = $("ulangBtn");
     const errEl = $("err");
 
-    // outputs dose totals
+    // outputs right
+    const basisOut = $("basisOut");
     const luasOut = $("luasOut");
+    const tanamanOut = $("tanamanOut");
+    const dosisOut = $("dosisOut");
     const totalKgOut = $("totalKgOut");
     const totalTonOut = $("totalTonOut");
     const karung25Out = $("karung25Out");
     const perM2Out = $("perM2Out");
 
-    // outputs materials
+    // outputs left
     const kotoranOut = $("kotoranOut");
     const sekamOut = $("sekamOut");
     const dedakOut = $("dedakOut");
@@ -278,50 +376,76 @@
       errEl.classList.remove("hide");
       errEl.textContent = msg;
     }
-
-    // ====== Dose conversion ======
-    // 400 g/polybag = 40 ton/ha => ton/ha = 0.1*g ; g = 10*ton/ha
-    function gPolybagToTonHa(g) { return 0.1 * g; }
-    function tonHaToGPolybag(t) { return 10 * t; }
-
-    // prevent sync loop
-    let lockDose = false;
-
-    gPolybagEl.addEventListener("input", () => {
-      if (lockDose) return;
-      lockDose = true;
-      const g = parseIdNumber(gPolybagEl.value);
-      if (Number.isFinite(g)) {
-        tHaEl.value = String(gPolybagToTonHa(g)).replace(".", ",");
-      }
-      lockDose = false;
-      calcAll();
-    });
-
-    tHaEl.addEventListener("input", () => {
-      if (lockDose) return;
-      lockDose = true;
-      const t = parseIdNumber(tHaEl.value);
-      if (Number.isFinite(t)) {
-        gPolybagEl.value = String(Math.round(tonHaToGPolybag(t)));
-      }
-      lockDose = false;
-      calcAll();
-    });
-
-    // ====== Core calculations ======
-    function calcDoseTotals(A_ha, T_tonPerHa) {
-      const totalTon = T_tonPerHa * A_ha;
-      const totalKg = totalTon * 1000;
-      const perM2 = (T_tonPerHa * 1000) / 10000; // kg/m2
-      return { totalTon, totalKg, perM2 };
+    function setInvalid(el, yes) {
+      if (!el) return;
+      el.classList.toggle("invalid", !!yes);
     }
 
-    // Total bokashi padat ~ K + 0.10K + dK, with d in [0.01..0.02]
-    // so total = K*(1.10 + d) => K range
+    function clearOutputs() {
+      basisOut.textContent = "-";
+      luasOut.textContent = "-";
+      tanamanOut.textContent = "-";
+      dosisOut.textContent = "-";
+      totalKgOut.textContent = "-";
+      totalTonOut.textContent = "-";
+      karung25Out.textContent = "-";
+      perM2Out.textContent = "-";
+
+      kotoranOut.textContent = "-";
+      sekamOut.textContent = "-";
+      dedakOut.textContent = "-";
+      ptocOut.textContent = "-";
+      gulaOut.textContent = "-";
+      batchOut.textContent = "-";
+    }
+
+    // ===== Dosis rekomendasi hortikultura =====
+    // basis luas: 10–25 ton/ha (pilih 10, 15, 25)
+    // basis tanaman: 112–450 g/tanaman (pilih 112, 250, 450)
+    const DOSE = {
+      luas: { unit: "ton/ha", low: 10, med: 15, high: 25 },
+      tanaman: { unit: "g/tanaman", low: 112, med: 250, high: 450 }
+    };
+
+    // active dose: "low" | "med" | "high"
+    let activeDoseKey = "med";
+
+    function setActiveDose(key){
+      activeDoseKey = key;
+      doseLow.classList.toggle("active", key === "low");
+      doseMed.classList.toggle("active", key === "med");
+      doseHigh.classList.toggle("active", key === "high");
+      render();
+    }
+
+    function getDoseValue(){
+      const isLuas = basisLuasEl.checked;
+      const cfg = isLuas ? DOSE.luas : DOSE.tanaman;
+      return cfg[activeDoseKey];
+    }
+    function getDoseUnit(){
+      const isLuas = basisLuasEl.checked;
+      return (isLuas ? DOSE.luas : DOSE.tanaman).unit;
+    }
+
+    function updateDoseBoxText(){
+      const isLuas = basisLuasEl.checked;
+      const cfg = isLuas ? DOSE.luas : DOSE.tanaman;
+
+      doseDesc.textContent = isLuas
+        ? "Pilihan ini menggunakan rekomendasi 10–25 ton/ha."
+        : "Pilihan ini menggunakan rekomendasi 112–450 g/tanaman.";
+
+      doseLowVal.textContent  = `${cfg.low} ${cfg.unit}`;
+      doseMedVal.textContent  = `${cfg.med} ${cfg.unit}`;
+      doseHighVal.textContent = `${cfg.high} ${cfg.unit}`;
+    }
+
+    // ===== Materials projection =====
+    // total bokashi padat ~ K + 0.10K + dK, d in [0.01..0.02]
+    // total = K*(1.10 + d) => K range
     function calcMaterialsFromTotalBokashi(totalKg) {
       const dMin = 0.01, dMax = 0.02;
-
       const K_max = totalKg / (1.10 + dMin);
       const K_min = totalKg / (1.10 + dMax);
 
@@ -335,78 +459,133 @@
       };
     }
 
-    function render() {
-      const mode = modeEl.value;
-      panelBahan.classList.toggle("hide", mode !== "bahan");
+    function render(){
+      const isLuas = basisLuasEl.checked;
 
-      const A_ha = parseIdNumber(luasHaEl.value);
-      const T = parseIdNumber(tHaEl.value);
+      // toggle panel + active style
+      panelLuas.classList.toggle("hide", !isLuas);
+      panelTanaman.classList.toggle("hide", isLuas);
+      choiceLuas.classList.toggle("active", isLuas);
+      choiceTanaman.classList.toggle("active", !isLuas);
 
-      if (!Number.isFinite(A_ha) || A_ha <= 0) {
-        showError("Luas lahan tidak valid. Contoh input benar: 0,25 atau 1,5");
-        // clear outputs
-        luasOut.textContent = "-";
-        totalKgOut.textContent = "-";
-        totalTonOut.textContent = "-";
-        karung25Out.textContent = "-";
-        perM2Out.textContent = "-";
-        kotoranOut.textContent = "-";
-        sekamOut.textContent = "-";
-        dedakOut.textContent = "-";
-        ptocOut.textContent = "-";
-        gulaOut.textContent = "-";
-        batchOut.textContent = "-";
-        return;
-      }
+      updateDoseBoxText();
 
-      if (!Number.isFinite(T) || T < 0) {
-        showError("Dosis ton/ha tidak valid. Contoh: 40 atau 12,5");
-        return;
-      }
-
+      // reset invalid + error
+      setInvalid(luasHaEl, false);
+      setInvalid(jumlahTanamanEl, false);
       showError("");
 
-      const { totalTon, totalKg, perM2 } = calcDoseTotals(A_ha, T);
+      const doseVal = getDoseValue();
+      const doseUnit = getDoseUnit();
 
-      luasOut.textContent = fmtId(A_ha, "ha", 4);
+      let totalKg = NaN;
+      let totalTon = NaN;
+
+      if (isLuas) {
+        basisOut.textContent = "Luas lahan";
+        const A = parseIdNumber(luasHaEl.value);
+
+        if (!Number.isFinite(A) || A <= 0) {
+          setInvalid(luasHaEl, true);
+          showError("Isi luas lahan terlebih dahulu (kolom merah wajib diisi).");
+          clearOutputs();
+          return;
+        }
+
+        // doseVal = ton/ha
+        totalTon = A * doseVal;
+        totalKg = totalTon * 1000;
+
+        luasOut.textContent = fmtId(A, "ha", 4);
+        tanamanOut.textContent = "-";
+        dosisOut.textContent = `${doseVal} ${doseUnit}`;
+
+        const kgPerM2 = (doseVal * 1000) / 10000; // T/10
+        const gPerM2 = kgPerM2 * 1000;
+        perM2Out.textContent = `${fmtId(kgPerM2, "kg/m²", 3)} (≈ ${fmtId(gPerM2, "g/m²", 0)})`;
+
+      } else {
+        basisOut.textContent = "Jumlah tanaman";
+        const N = parseIdNumber(jumlahTanamanEl.value);
+
+        if (!Number.isFinite(N) || N <= 0) {
+          setInvalid(jumlahTanamanEl, true);
+          showError("Isi jumlah tanaman terlebih dahulu (kolom merah wajib diisi).");
+          clearOutputs();
+          return;
+        }
+
+        // doseVal = g/tanaman
+        totalKg = (N * doseVal) / 1000;
+        totalTon = totalKg / 1000;
+
+        luasOut.textContent = "-";
+        tanamanOut.textContent = fmtId(N, "tanaman", 0);
+        dosisOut.textContent = `${doseVal} ${doseUnit}`;
+        perM2Out.textContent = "-";
+      }
+
+      // common outputs
       totalKgOut.textContent = fmtId(totalKg, "kg", 2);
       totalTonOut.textContent = fmtId(totalTon, "ton", 3);
 
       const karung25 = totalKg / 25;
-      karung25Out.textContent =
-        `${fmtId(karung25, "karung", 2)} (≈ ${Math.ceil(karung25)} karung jika dibulatkan ke atas)`;
+      karung25Out.textContent = `${fmtId(karung25, "karung", 2)} (≈ ${Math.ceil(karung25)} karung)`;
 
-      perM2Out.textContent = `${fmtId(perM2, "kg/m²", 3)}`;
+      // materials (range)
+      const m = calcMaterialsFromTotalBokashi(totalKg);
+      kotoranOut.textContent = rangeId(m.K_min, m.K_max, "kg", 2);
+      sekamOut.textContent = rangeId(m.sekam_min, m.sekam_max, "kg", 2);
+      dedakOut.textContent = rangeId(m.dedak_min, m.dedak_max, "kg", 2);
+      ptocOut.textContent = rangeId(m.ptoc_min, m.ptoc_max, "L", 2);
 
-      if (mode === "bahan") {
-        const m = calcMaterialsFromTotalBokashi(totalKg);
+      const gulaKgMin = m.gula_g_min / 1000;
+      const gulaKgMax = m.gula_g_max / 1000;
+      gulaOut.textContent = `${rangeId(m.gula_g_min, m.gula_g_max, "gram", 0)} (≈ ${rangeId(gulaKgMin, gulaKgMax, "kg", 2)})`;
 
-        kotoranOut.textContent = rangeId(m.K_min, m.K_max, "kg", 2);
-        sekamOut.textContent = rangeId(m.sekam_min, m.sekam_max, "kg", 2);
-        dedakOut.textContent = rangeId(m.dedak_min, m.dedak_max, "kg", 2);
-        ptocOut.textContent = rangeId(m.ptoc_min, m.ptoc_max, "L", 2);
-
-        const gulaKgMin = m.gula_g_min / 1000;
-        const gulaKgMax = m.gula_g_max / 1000;
-        gulaOut.textContent =
-          `${rangeId(m.gula_g_min, m.gula_g_max, "gram", 0)} (≈ ${rangeId(gulaKgMin, gulaKgMax, "kg", 2)})`;
-
-        batchOut.textContent =
-          `${rangeId(m.batch_min, m.batch_max, "batch", 2)} (1 batch = 500 kg kotoran sapi)`;
-      }
+      batchOut.textContent = `${rangeId(m.batch_min, m.batch_max, "batch", 2)} (1 batch = 500 kg kotoran)`;
     }
 
-    function calcAll(){ render(); }
+    // click basis cards
+    choiceLuas.addEventListener("click", () => { basisLuasEl.checked = true; render(); });
+    choiceTanaman.addEventListener("click", () => { basisTanamanEl.checked = true; render(); });
 
-    // listeners
-    modeEl.addEventListener("change", calcAll);
-    luasHaEl.addEventListener("input", calcAll);
-    // dose listeners already call calcAll via sync, but keep these:
-    tHaEl.addEventListener("input", calcAll);
-    gPolybagEl.addEventListener("input", calcAll);
+    // dose option clicks
+    doseLow.addEventListener("click", () => setActiveDose("low"));
+    doseMed.addEventListener("click", () => setActiveDose("med"));
+    doseHigh.addEventListener("click", () => setActiveDose("high"));
+
+    // keyboard accessible dose options
+    [doseLow, doseMed, doseHigh].forEach(el => {
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); el.click(); }
+      });
+    });
+
+    // input listeners
+    luasHaEl.addEventListener("input", render);
+    jumlahTanamanEl.addEventListener("input", render);
+
+    // tombol ULANGI
+    ulangBtn.addEventListener("click", () => {
+      showError("");
+      setInvalid(luasHaEl, false);
+      setInvalid(jumlahTanamanEl, false);
+
+      luasHaEl.value = "";
+      jumlahTanamanEl.value = "";
+
+      activeDoseKey = "med";
+      doseLow.classList.remove("active");
+      doseHigh.classList.remove("active");
+      doseMed.classList.add("active");
+
+      clearOutputs();
+      render();
+    });
 
     // init
-    calcAll();
+    render();
   </script>
 </body>
 </html>
