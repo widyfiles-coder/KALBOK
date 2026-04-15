@@ -160,25 +160,6 @@
       border-color: var(--accent);
     }
 
-    /* kotak info resep */
-    .recipe-info{
-      background: #f9fafb;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 16px;
-      margin-top: 10px;
-      font-size: 15px;
-      color: #333;
-      line-height: 1.8;
-    }
-    .recipe-info strong{ color: #222; }
-    .recipe-info .ri-title{
-      font-weight: 900;
-      font-size: 16px;
-      margin-bottom: 6px;
-      color: var(--accent);
-    }
-
     table{ width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 17px; }
     th, td{ padding: 10px 8px; border-bottom: 1px solid #eee; vertical-align: top; text-align: left; }
     th{ background: #fcfcfc; font-weight: 800; }
@@ -234,7 +215,7 @@
 
     <div id="panelLuas">
       <label for="luasHa">Luas lahan (ha)</label>
-      <input id="luasHa" type="text" inputmode="decimal" placeholder="Contoh: 0,25" value="">
+      <input id="luasHa" type="text" inputmode="decimal" placeholder="Contoh: 2" value="">
       <div class="small">Wajib diisi.</div>
     </div>
 
@@ -291,9 +272,6 @@
 
     </div>
 
-    <!-- info resep referensi (dinamis) -->
-    <div class="recipe-info" id="recipeInfo">-</div>
-
     <div id="err" class="error hide"></div>
   </div>
 
@@ -304,11 +282,10 @@
     <div class="card">
       <h2 style="margin:0 0 4px;">Kebutuhan Bahan Baku</h2>
       <p class="muted" style="margin:0 0 10px;" id="bahanSubtitle">-</p>
-      <div class="small" id="bahanAsumsi">-</div>
 
       <table aria-label="Hasil kebutuhan bahan baku">
         <thead>
-          <tr><th>Bahan</th><th>Kebutuhan (estimasi)</th></tr>
+          <tr><th>Bahan</th><th>Kebutuhan</th></tr>
         </thead>
         <tbody id="bahanTbody"></tbody>
       </table>
@@ -322,13 +299,13 @@
           <tr><th>Komponen</th><th>Nilai</th></tr>
         </thead>
         <tbody>
-          <tr><td>Cara hitung</td>          <td id="basisOut">-</td></tr>
-          <tr><td>Tipe bokashi</td>         <td id="tipeOut">-</td></tr>
-          <tr><td>Luas</td>                 <td id="luasOut">-</td></tr>
-          <tr><td>Jumlah tanaman</td>       <td id="tanamanOut">-</td></tr>
-          <tr><td>Dosis terpilih</td>       <td id="dosisOut">-</td></tr>
-          <tr><td>Total bokashi</td>        <td id="totalKgOut">-</td></tr>
-          <tr><td>Setara ton</td>           <td id="totalTonOut">-</td></tr>
+          <tr><td>Cara hitung</td>           <td id="basisOut">-</td></tr>
+          <tr><td>Tipe bokashi</td>          <td id="tipeOut">-</td></tr>
+          <tr><td>Luas</td>                  <td id="luasOut">-</td></tr>
+          <tr><td>Jumlah tanaman</td>        <td id="tanamanOut">-</td></tr>
+          <tr><td>Dosis terpilih</td>        <td id="dosisOut">-</td></tr>
+          <tr><td>Total bokashi dibutuhkan</td><td id="totalKgOut">-</td></tr>
+          <tr><td>Setara ton</td>            <td id="totalTonOut">-</td></tr>
           <tr><td>Perkiraan karung 25 kg</td><td id="karung25Out">-</td></tr>
           <tr><td>Info per m² (jika luas)</td><td id="perM2Out">-</td></tr>
         </tbody>
@@ -357,17 +334,15 @@
     // ─────────────────────────────────────────
     // Formatter id-ID
     // ─────────────────────────────────────────
-    const nf = (d) => new Intl.NumberFormat("id-ID", { maximumFractionDigits: d });
-    const NF = { 0: nf(0), 1: nf(1), 2: nf(2), 3: nf(3), 4: nf(4) };
+    const NF = {};
+    [0,1,2,3,4].forEach(d => {
+      NF[d] = new Intl.NumberFormat("id-ID", { maximumFractionDigits: d });
+    });
 
     function fmtId(x, unit = "", digits = 2) {
       if (!Number.isFinite(x)) return "-";
-      const s = NF[digits] ? NF[digits].format(x) : nf(digits).format(x);
+      const s = (NF[digits] || NF[2]).format(x);
       return unit ? `${s} ${unit}` : s;
-    }
-    function rangeId(min, max, unit = "", digits = 2) {
-      if (!Number.isFinite(min) || !Number.isFinite(max)) return "-";
-      return `${fmtId(min, unit, digits)} – ${fmtId(max, unit, digits)}`;
     }
 
     // ─────────────────────────────────────────
@@ -396,7 +371,6 @@
     const choiceJerami  = $("choiceJerami");
     const tipeKandangEl = $("tipeKandang");
     const tipeJeramiEl  = $("tipeJerami");
-    const recipeInfo    = $("recipeInfo");
 
     const ulangBtn = $("ulangBtn");
     const errEl    = $("err");
@@ -412,7 +386,6 @@
     const perM2Out    = $("perM2Out");
 
     const bahanSubtitle = $("bahanSubtitle");
-    const bahanAsumsi   = $("bahanAsumsi");
     const bahanTbody    = $("bahanTbody");
 
     // ─────────────────────────────────────────
@@ -425,158 +398,118 @@
     let activeDoseKey = "med";
 
     // ─────────────────────────────────────────
-    // RESEP REFERENSI
+    // RASIO BAHAN (internal — tidak ditampilkan ke petani)
+    //
+    // Bokashi Pupuk Kandang — ref 1 batch = 310,5 kg padat
+    //   Pupuk kandang : 200 kg  → rasio = 200/310,5
+    //   Dedak         :  10 kg  → rasio =  10/310,5
+    //   Sekam/serbuk  : 100 kg  → rasio = 100/310,5
+    //   Gula/molase   :   0,5 kg→ rasio =   0,5/310,5
+    //   EM4           :   1 L   → rasio =   1/310,5 L per kg bokashi
+    //   Air           :  20 L   → rasio =  20/310,5 L per kg bokashi
+    //
+    // Bokashi Jerami — ref 1 batch = 410,5 kg padat
+    //   Jerami        : 200 kg  → rasio = 200/410,5
+    //   Dedak         :  10 kg  → rasio =  10/410,5
+    //   Sekam         : 200 kg  → rasio = 200/410,5
+    //   Gula/molase   :   0,5 kg→ rasio =   0,5/410,5
+    //   EM4           :   1 L   → rasio =   1/410,5 L per kg bokashi
+    //   Air           :  20 L   → rasio =  20/410,5 L per kg bokashi
     // ─────────────────────────────────────────
 
-    /*
-      BOKASHI PUPUK KANDANG — 1 batch referensi
-      (a) Pupuk kandang        200 kg
-      (b) Dedak                 10 kg
-      (c) Arang sekam/serbuk gergaji  100 kg
-      (d) Gula pasir/molase      0,5 kg
-      (e) EM4                    1 L
-      (f) Air                   20 L
-      Total padat per batch = 200 + 10 + 100 + 0,5 = 310,5 kg
-    */
-    const REF_KANDANG = {
-      totalPadat : 310.5,   // kg bahan padat per batch
-      pupukKandang: 200,
-      dedak       : 10,
-      sekam       : 100,
-      gula        : 0.5,
-      em4_L       : 1,
-      air_L       : 20
-    };
+    const _K = 310.5; // total padat 1 batch kandang
+    const _J = 410.5; // total padat 1 batch jerami
 
-    /*
-      BOKASHI JERAMI — 1 batch referensi
-      (a) Jerami               200 kg
-      (b) Dedak                 10 kg
-      (c) Sekam                200 kg
-      (d) Gula pasir/molase      0,5 kg
-      (e) EM4                    1 L
-      (f) Air                   20 L
-      Total padat per batch = 200 + 10 + 200 + 0,5 = 410,5 kg
-    */
-    const REF_JERAMI = {
-      totalPadat : 410.5,   // kg bahan padat per batch
-      jerami      : 200,
-      dedak       : 10,
-      sekam       : 200,
-      gula        : 0.5,
-      em4_L       : 1,
-      air_L       : 20
+    const RASIO = {
+      kandang: {
+        pupukKandang : 200  / _K,
+        dedak        :  10  / _K,
+        sekam        : 100  / _K,
+        gula         :   0.5/ _K,
+        em4          :   1  / _K,   // L per kg bokashi
+        air          :  20  / _K    // L per kg bokashi
+      },
+      jerami: {
+        jerami       : 200  / _J,
+        dedak        :  10  / _J,
+        sekam        : 200  / _J,
+        gula         :   0.5/ _J,
+        em4          :   1  / _J,
+        air          :  20  / _J
+      }
     };
 
     // ─────────────────────────────────────────
     // Fungsi kalkulasi bahan
+    // (menerima totalKg bokashi yang dibutuhkan,
+    //  mengembalikan array baris tabel {bahan, val})
     // ─────────────────────────────────────────
     function calcKandang(totalKg) {
-      const r      = REF_KANDANG;
-      const nBatch = totalKg / r.totalPadat;
-
-      const pupuk  = nBatch * r.pupukKandang;
-      const dedak  = nBatch * r.dedak;
-      const sekam  = nBatch * r.sekam;
-      const gula   = nBatch * r.gula;
-      const gulaGram = gula * 1000;
-      const em4L   = nBatch * r.em4_L;
-      const em4Ml  = em4L * 1000;
-      const airL   = nBatch * r.air_L;
+      const r = RASIO.kandang;
+      const pupuk    = r.pupukKandang * totalKg;
+      const dedak    = r.dedak        * totalKg;
+      const sekam    = r.sekam        * totalKg;
+      const gulaKg   = r.gula         * totalKg;
+      const gulaGram = gulaKg * 1000;
+      const em4L     = r.em4          * totalKg;
+      const em4Ml    = em4L * 1000;
+      const airL     = r.air          * totalKg;
 
       return [
         { bahan: "Pupuk kandang (kotoran hewan)",
-          val  : fmtId(pupuk, "kg", 2) },
+          val  : fmtId(pupuk,  "kg", 2) },
         { bahan: "Dedak",
-          val  : fmtId(dedak, "kg", 2) },
+          val  : fmtId(dedak,  "kg", 2) },
         { bahan: "Arang sekam / serbuk gergaji",
-          val  : fmtId(sekam, "kg", 2) },
+          val  : fmtId(sekam,  "kg", 2) },
         { bahan: "Gula pasir / molase",
-          val  : `${fmtId(gulaGram, "gram", 0)} (≈ ${fmtId(gula, "kg", 2)})` },
+          val  : `${fmtId(gulaGram, "gram", 0)} (≈ ${fmtId(gulaKg, "kg", 2)})` },
         { bahan: "EM4",
           val  : `${fmtId(em4Ml, "ml", 0)} (≈ ${fmtId(em4L, "L", 2)})` },
         { bahan: "Air",
-          val  : fmtId(airL, "L", 1) },
-        { bahan: "Perkiraan batch (ref. 310,5 kg/batch)",
-          val  : `${fmtId(nBatch, "batch", 2)}` }
+          val  : fmtId(airL, "L", 1) }
       ];
     }
 
     function calcJerami(totalKg) {
-      const r      = REF_JERAMI;
-      const nBatch = totalKg / r.totalPadat;
-
-      const jerami = nBatch * r.jerami;
-      const dedak  = nBatch * r.dedak;
-      const sekam  = nBatch * r.sekam;
-      const gula   = nBatch * r.gula;
-      const gulaGram = gula * 1000;
-      const em4L   = nBatch * r.em4_L;
-      const em4Ml  = em4L * 1000;
-      const airL   = nBatch * r.air_L;
+      const r = RASIO.jerami;
+      const jerami   = r.jerami  * totalKg;
+      const dedak    = r.dedak   * totalKg;
+      const sekam    = r.sekam   * totalKg;
+      const gulaKg   = r.gula    * totalKg;
+      const gulaGram = gulaKg * 1000;
+      const em4L     = r.em4     * totalKg;
+      const em4Ml    = em4L * 1000;
+      const airL     = r.air     * totalKg;
 
       return [
         { bahan: "Jerami padi",
           val  : fmtId(jerami, "kg", 2) },
         { bahan: "Dedak",
-          val  : fmtId(dedak, "kg", 2) },
+          val  : fmtId(dedak,  "kg", 2) },
         { bahan: "Sekam",
-          val  : fmtId(sekam, "kg", 2) },
+          val  : fmtId(sekam,  "kg", 2) },
         { bahan: "Gula pasir / molase",
-          val  : `${fmtId(gulaGram, "gram", 0)} (≈ ${fmtId(gula, "kg", 2)})` },
+          val  : `${fmtId(gulaGram, "gram", 0)} (≈ ${fmtId(gulaKg, "kg", 2)})` },
         { bahan: "EM4",
           val  : `${fmtId(em4Ml, "ml", 0)} (≈ ${fmtId(em4L, "L", 2)})` },
         { bahan: "Air",
-          val  : fmtId(airL, "L", 1) },
-        { bahan: "Perkiraan batch (ref. 410,5 kg/batch)",
-          val  : `${fmtId(nBatch, "batch", 2)}` }
+          val  : fmtId(airL, "L", 1) }
       ];
     }
 
     // ─────────────────────────────────────────
-    // Konfigurasi resep (teks & fungsi)
+    // Konfigurasi tipe
     // ─────────────────────────────────────────
-    const RECIPE = {
+    const TIPE = {
       kandang: {
         label   : "Bokashi Pupuk Kandang",
-        subtitle: "Dihitung dari total bokashi, diproyeksikan ke resep berbasis "
-                + "<strong>pupuk kandang (kotoran hewan)</strong>.",
-        asumsi  : "Resep referensi per batch: Pupuk kandang 200 kg • Dedak 10 kg • "
-                + "Arang sekam/serbuk gergaji 100 kg • Gula pasir/molase 0,5 kg • EM4 1 L • Air 20 L",
-        infoBox :
-          `<div class="ri-title">📋 Resep Referensi — Bokashi Pupuk Kandang (1 batch)</div>
-           <ol style="margin:0;padding-left:18px;">
-             <li>Pupuk kandang (kotoran hewan) — <strong>200 kg</strong></li>
-             <li>Dedak — <strong>10 kg</strong></li>
-             <li>Arang sekam / serbuk gergaji — <strong>100 kg</strong></li>
-             <li>Gula pasir / molase — <strong>0,5 kg</strong></li>
-             <li>EM4 — <strong>1 L</strong></li>
-             <li>Air — <strong>20 L</strong></li>
-           </ol>
-           <div style="margin-top:8px;font-size:13px;color:#888;">
-             Total bahan padat per batch ≈ 310,5 kg
-           </div>`,
+        subtitle: "Kebutuhan bahan baku untuk membuat bokashi pupuk kandang sesuai luas/jumlah tanaman Anda.",
         calc    : calcKandang
       },
       jerami: {
         label   : "Bokashi Jerami",
-        subtitle: "Dihitung dari total bokashi, diproyeksikan ke resep berbasis "
-                + "<strong>jerami padi</strong>.",
-        asumsi  : "Resep referensi per batch: Jerami 200 kg • Dedak 10 kg • "
-                + "Sekam 200 kg • Gula pasir/molase 0,5 kg • EM4 1 L • Air 20 L",
-        infoBox :
-          `<div class="ri-title">📋 Resep Referensi — Bokashi Jerami (1 batch)</div>
-           <ol style="margin:0;padding-left:18px;">
-             <li>Jerami padi — <strong>200 kg</strong></li>
-             <li>Dedak — <strong>10 kg</strong></li>
-             <li>Sekam — <strong>200 kg</strong></li>
-             <li>Gula pasir / molase — <strong>0,5 kg</strong></li>
-             <li>EM4 — <strong>1 L</strong></li>
-             <li>Air — <strong>20 L</strong></li>
-           </ol>
-           <div style="margin-top:8px;font-size:13px;color:#888;">
-             Total bahan padat per batch ≈ 410,5 kg
-           </div>`,
+        subtitle: "Kebutuhan bahan baku untuk membuat bokashi jerami sesuai luas/jumlah tanaman Anda.",
         calc    : calcJerami
       }
     };
@@ -623,10 +556,8 @@
       ["basisOut","tipeOut","luasOut","tanamanOut","dosisOut",
        "totalKgOut","totalTonOut","karung25Out","perM2Out"]
         .forEach(id => $(id).textContent = "-");
-      bahanSubtitle.innerHTML = "-";
-      bahanAsumsi.textContent = "-";
-      bahanTbody.innerHTML    = "<tr><td colspan='2' style='color:#aaa;'>-</td></tr>";
-      recipeInfo.innerHTML    = "-";
+      bahanSubtitle.textContent = "-";
+      bahanTbody.innerHTML = "<tr><td colspan='2' style='color:#aaa;'>-</td></tr>";
     }
 
     // ─────────────────────────────────────────
@@ -636,30 +567,27 @@
       const isLuas    = basisLuasEl.checked;
       const isKandang = tipeKandangEl.checked;
       const tipeKey   = isKandang ? "kandang" : "jerami";
-      const recipe    = RECIPE[tipeKey];
+      const tipe      = TIPE[tipeKey];
 
       // toggle panel & kartu aktif
-      panelLuas.classList.toggle("hide",      !isLuas);
-      panelTanaman.classList.toggle("hide",    isLuas);
-      choiceLuas.classList.toggle("active",    isLuas);
-      choiceTanaman.classList.toggle("active", !isLuas);
-      choiceKandang.classList.toggle("active",  isKandang);
-      choiceJerami.classList.toggle("active",  !isKandang);
+      panelLuas.classList.toggle("hide",       !isLuas);
+      panelTanaman.classList.toggle("hide",     isLuas);
+      choiceLuas.classList.toggle("active",     isLuas);
+      choiceTanaman.classList.toggle("active",  !isLuas);
+      choiceKandang.classList.toggle("active",   isKandang);
+      choiceJerami.classList.toggle("active",   !isKandang);
 
       updateDoseBoxText();
       setInvalid(luasHaEl, false);
       setInvalid(jumlahTanamanEl, false);
       showError("");
 
-      // tampilkan info resep referensi
-      recipeInfo.innerHTML = recipe.infoBox;
-
       const doseVal  = getDoseValue();
       const doseUnit = getDoseUnit();
       let totalKg    = NaN;
       let totalTon   = NaN;
 
-      // ── hitung total bokashi ──
+      // ── hitung total bokashi yang dibutuhkan ──
       if (isLuas) {
         basisOut.textContent = "Luas lahan";
         const A = parseIdNumber(luasHaEl.value);
@@ -669,14 +597,15 @@
           clearOutputs();
           return;
         }
-        totalTon = A * doseVal;
-        totalKg  = totalTon * 1000;
+        totalTon = A * doseVal;          // ton/ha × ha = ton
+        totalKg  = totalTon * 1000;      // → kg
         luasOut.textContent    = fmtId(A, "ha", 4);
         tanamanOut.textContent = "-";
         dosisOut.textContent   = `${doseVal} ${doseUnit}`;
         const kgPerM2 = (doseVal * 1000) / 10000;
         perM2Out.textContent =
           `${fmtId(kgPerM2, "kg/m²", 3)} (≈ ${fmtId(kgPerM2 * 1000, "g/m²", 0)})`;
+
       } else {
         basisOut.textContent = "Jumlah tanaman";
         const N = parseIdNumber(jumlahTanamanEl.value);
@@ -686,7 +615,7 @@
           clearOutputs();
           return;
         }
-        totalKg  = (N * doseVal) / 1000;
+        totalKg  = (N * doseVal) / 1000; // g/tanaman × tanaman / 1000 = kg
         totalTon = totalKg / 1000;
         luasOut.textContent    = "-";
         tanamanOut.textContent = fmtId(N, "tanaman", 0);
@@ -695,17 +624,16 @@
       }
 
       // ── output kanan ──
-      tipeOut.textContent     = recipe.label;
+      tipeOut.textContent     = tipe.label;
       totalKgOut.textContent  = fmtId(totalKg,  "kg",  2);
       totalTonOut.textContent = fmtId(totalTon, "ton", 3);
       const karung25 = totalKg / 25;
       karung25Out.textContent =
         `${fmtId(karung25, "karung", 2)} (≈ ${Math.ceil(karung25)} karung)`;
 
-      // ── output kiri: bahan baku dinamis ──
-      bahanSubtitle.innerHTML = recipe.subtitle;
-      bahanAsumsi.textContent = recipe.asumsi;
-      const rows = recipe.calc(totalKg);
+      // ── output kiri: bahan baku proporsional ──
+      bahanSubtitle.textContent = tipe.subtitle;
+      const rows = tipe.calc(totalKg);
       bahanTbody.innerHTML = rows
         .map(r => `<tr><td>${r.bahan}</td><td>${r.val}</td></tr>`)
         .join("");
