@@ -160,9 +160,58 @@
       border-color: var(--accent);
     }
 
-    table{ width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 17px; }
+    /* kotak sesi — highlight khusus */
+    .sesi-box{
+      background: #fffbe6;
+      border: 1px solid #f0d080;
+      border-radius: 14px;
+      padding: 14px;
+      margin-top: 14px;
+    }
+    .sesi-box .head{
+      font-weight: 900;
+      font-size: 18px;
+      margin-bottom: 4px;
+      color: #7a4f00;
+    }
+    .sesi-box .sub{
+      font-size: 14px;
+      color: #92620a;
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+    .sesi-box input{
+      max-width: 260px;
+    }
+
+    /* banner ringkasan sesi */
+    .sesi-banner{
+      background: var(--accent-bg);
+      border: 1px solid var(--green-bd);
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-top: 12px;
+      font-size: 15px;
+      line-height: 1.7;
+      color: #1a4a30;
+    }
+    .sesi-banner strong{ font-size: 17px; }
+
+    /* tabel dua bagian: per sesi & total */
+    .tabel-wrap{ margin-top: 10px; }
+    .tabel-label{
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--accent);
+      margin: 14px 0 4px;
+    }
+
+    table{ width: 100%; border-collapse: collapse; font-size: 17px; }
     th, td{ padding: 10px 8px; border-bottom: 1px solid #eee; vertical-align: top; text-align: left; }
     th{ background: #fcfcfc; font-weight: 800; }
+    td.dimmed{ color: var(--muted); font-size: 15px; }
 
     .small{ font-size: 15px; color: var(--muted); }
     .error{ color: var(--danger); font-size: 15px; margin-top: 12px; line-height: 1.4; }
@@ -183,7 +232,7 @@
 <body>
   <h1>KALBOK — Kalkulator Bokashi (Hortikultura)</h1>
   <p class="muted">
-    Ikuti 3 langkah di bawah, lalu hasil akan muncul otomatis.
+    Ikuti 4 langkah di bawah, lalu hasil akan muncul otomatis.
     Desimal gunakan <strong>koma</strong> (contoh: 0,25).
   </p>
 
@@ -249,7 +298,6 @@
     <!-- ── LANGKAH 3 ── -->
     <div class="step-label">Langkah 3 — Pilih tipe bokashi</div>
     <div class="choice-wrap" role="radiogroup" aria-label="Pilihan tipe bokashi">
-
       <label class="choice active" id="choiceKandang">
         <input type="radio" name="tipeBokashi" id="tipeKandang" checked />
         <span class="badge">🐄 Pupuk Kandang</span>
@@ -259,7 +307,6 @@
           cocok untuk memperbaiki struktur tanah dan kesuburan jangka panjang.
         </div>
       </label>
-
       <label class="choice" id="choiceJerami">
         <input type="radio" name="tipeBokashi" id="tipeJerami" />
         <span class="badge yellow">🌾 Jerami</span>
@@ -269,7 +316,22 @@
           aerasi tanah dan sebagai mulsa organik pasca aplikasi.
         </div>
       </label>
+    </div>
 
+    <hr>
+
+    <!-- ── LANGKAH 4 ── -->
+    <div class="step-label">Langkah 4 — Rencana pembuatan</div>
+    <div class="sesi-box">
+      <div class="head">🗓️ Berapa kali rencana pembuatan bokashi?</div>
+      <div class="sub">
+        Bokashi tidak perlu dibuat sekaligus. Bagi ke beberapa sesi agar bahan
+        yang disiapkan setiap kali lebih ringan dan mudah dikelola.
+      </div>
+      <label for="jumlahSesi">Jumlah sesi pembuatan</label>
+      <input id="jumlahSesi" type="text" inputmode="numeric"
+             placeholder="Contoh: 10" value="1">
+      <div class="small">Isi minimal 1. Hasil bahan baku akan dibagi rata per sesi.</div>
     </div>
 
     <div id="err" class="error hide"></div>
@@ -281,14 +343,30 @@
     <!-- KIRI: BAHAN BAKU -->
     <div class="card">
       <h2 style="margin:0 0 4px;">Kebutuhan Bahan Baku</h2>
-      <p class="muted" style="margin:0 0 10px;" id="bahanSubtitle">-</p>
+      <p class="muted" style="margin:0 0 6px;" id="bahanSubtitle">-</p>
 
-      <table aria-label="Hasil kebutuhan bahan baku">
-        <thead>
-          <tr><th>Bahan</th><th>Kebutuhan</th></tr>
-        </thead>
-        <tbody id="bahanTbody"></tbody>
-      </table>
+      <!-- banner ringkasan sesi -->
+      <div class="sesi-banner hide" id="sesiBanner">-</div>
+
+      <div class="tabel-wrap">
+        <!-- PER SESI -->
+        <div class="tabel-label" id="labelPerSesi">Per Sesi Pembuatan</div>
+        <table aria-label="Bahan per sesi">
+          <thead>
+            <tr><th>Bahan</th><th>Per Sesi</th></tr>
+          </thead>
+          <tbody id="bahanSesiTbody"></tbody>
+        </table>
+
+        <!-- TOTAL -->
+        <div class="tabel-label">Total Keseluruhan</div>
+        <table aria-label="Bahan total">
+          <thead>
+            <tr><th>Bahan</th><th>Total</th></tr>
+          </thead>
+          <tbody id="bahanTotalTbody"></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- KANAN: KEBUTUHAN BOKASHI -->
@@ -299,15 +377,17 @@
           <tr><th>Komponen</th><th>Nilai</th></tr>
         </thead>
         <tbody>
-          <tr><td>Cara hitung</td>            <td id="basisOut">-</td></tr>
-          <tr><td>Tipe bokashi</td>           <td id="tipeOut">-</td></tr>
-          <tr><td>Luas</td>                   <td id="luasOut">-</td></tr>
-          <tr><td>Jumlah tanaman</td>         <td id="tanamanOut">-</td></tr>
-          <tr><td>Dosis terpilih</td>         <td id="dosisOut">-</td></tr>
+          <tr><td>Cara hitung</td>             <td id="basisOut">-</td></tr>
+          <tr><td>Tipe bokashi</td>            <td id="tipeOut">-</td></tr>
+          <tr><td>Luas</td>                    <td id="luasOut">-</td></tr>
+          <tr><td>Jumlah tanaman</td>          <td id="tanamanOut">-</td></tr>
+          <tr><td>Dosis terpilih</td>          <td id="dosisOut">-</td></tr>
           <tr><td>Total bokashi dibutuhkan</td><td id="totalKgOut">-</td></tr>
-          <tr><td>Setara ton</td>             <td id="totalTonOut">-</td></tr>
-          <tr><td>Perkiraan karung 25 kg</td> <td id="karung25Out">-</td></tr>
-          <tr><td>Info per m² (jika luas)</td><td id="perM2Out">-</td></tr>
+          <tr><td>Setara ton</td>              <td id="totalTonOut">-</td></tr>
+          <tr><td>Perkiraan karung 25 kg</td>  <td id="karung25Out">-</td></tr>
+          <tr><td>Info per m² (jika luas)</td> <td id="perM2Out">-</td></tr>
+          <tr><td>Jumlah sesi pembuatan</td>   <td id="sesiOut">-</td></tr>
+          <tr><td>Bokashi per sesi</td>        <td id="kgPerSesiOut">-</td></tr>
         </tbody>
       </table>
     </div>
@@ -316,7 +396,7 @@
 
   <script>
     // ─────────────────────────────────────────
-    // Parsing angka format Indonesia (koma desimal)
+    // Parsing angka format Indonesia
     // ─────────────────────────────────────────
     function parseIdNumber(str) {
       if (str == null) return NaN;
@@ -332,11 +412,10 @@
     }
 
     // ─────────────────────────────────────────
-    // Formatter — semua output dibulatkan ke bilangan bulat
+    // Formatter — semua bulat, tanpa desimal
     // ─────────────────────────────────────────
     const fmt0 = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 });
 
-    // Bulatkan & format tanpa desimal
     function fmt(x, unit = "") {
       if (!Number.isFinite(x)) return "-";
       const s = fmt0.format(Math.round(x));
@@ -356,6 +435,7 @@
     const panelTanaman    = $("panelTanaman");
     const luasHaEl        = $("luasHa");
     const jumlahTanamanEl = $("jumlahTanaman");
+    const jumlahSesiEl    = $("jumlahSesi");
 
     const doseDesc    = $("doseDesc");
     const doseLow     = $("doseLow");
@@ -373,18 +453,23 @@
     const ulangBtn = $("ulangBtn");
     const errEl    = $("err");
 
-    const basisOut    = $("basisOut");
-    const tipeOut     = $("tipeOut");
-    const luasOut     = $("luasOut");
-    const tanamanOut  = $("tanamanOut");
-    const dosisOut    = $("dosisOut");
-    const totalKgOut  = $("totalKgOut");
-    const totalTonOut = $("totalTonOut");
-    const karung25Out = $("karung25Out");
-    const perM2Out    = $("perM2Out");
+    const basisOut      = $("basisOut");
+    const tipeOut       = $("tipeOut");
+    const luasOut       = $("luasOut");
+    const tanamanOut    = $("tanamanOut");
+    const dosisOut      = $("dosisOut");
+    const totalKgOut    = $("totalKgOut");
+    const totalTonOut   = $("totalTonOut");
+    const karung25Out   = $("karung25Out");
+    const perM2Out      = $("perM2Out");
+    const sesiOut       = $("sesiOut");
+    const kgPerSesiOut  = $("kgPerSesiOut");
 
-    const bahanSubtitle = $("bahanSubtitle");
-    const bahanTbody    = $("bahanTbody");
+    const bahanSubtitle   = $("bahanSubtitle");
+    const sesiBanner      = $("sesiBanner");
+    const labelPerSesi    = $("labelPerSesi");
+    const bahanSesiTbody  = $("bahanSesiTbody");
+    const bahanTotalTbody = $("bahanTotalTbody");
 
     // ─────────────────────────────────────────
     // Dosis
@@ -427,97 +512,87 @@
         air          :  20   / _K
       },
       jerami: {
-        jerami       : 200   / _J,
-        dedak        :  10   / _J,
-        sekam        : 200   / _J,
-        gula         :   0.5 / _J,
-        em4          :   1   / _J,
-        air          :  20   / _J
+        jerami : 200   / _J,
+        dedak  :  10   / _J,
+        sekam  : 200   / _J,
+        gula   :   0.5 / _J,
+        em4    :   1   / _J,
+        air    :  20   / _J
       }
     };
 
     // ─────────────────────────────────────────
-    // Fungsi kalkulasi bahan
-    // Semua angka dibulatkan — tidak ada koma
+    // Hitung bahan dari totalKg
+    // Kembalikan array { bahan, totalVal, sesiVal }
     // ─────────────────────────────────────────
-    function calcKandang(totalKg) {
-      const r = RASIO.kandang;
+    function calcBahan(totalKg, nSesi, tipeKey) {
+      const r = RASIO[tipeKey];
+      const s = nSesi >= 1 ? nSesi : 1; // guard
 
-      const pupuk    = r.pupukKandang * totalKg;
-      const dedak    = r.dedak        * totalKg;
-      const sekam    = r.sekam        * totalKg;
-      const gulaKg   = r.gula         * totalKg;
-      const gulaGram = gulaKg * 1000;
-      const em4L     = r.em4          * totalKg;
-      const em4Ml    = em4L * 1000;
-      const airL     = r.air          * totalKg;
+      // helper: format otomatis gram↔kg dan ml↔L, tetap bulat
+      function fmtBerat(kg) {
+        // tampilkan gram jika < 1 kg agar tidak jadi "0 kg"
+        if (Math.round(kg) === 0 && kg > 0) return fmt(kg * 1000, "gram");
+        return fmt(kg, "kg");
+      }
+      function fmtCair(L) {
+        if (Math.round(L) === 0 && L > 0) return fmt(L * 1000, "ml");
+        return fmt(L, "L");
+      }
 
-      return [
-        { bahan: "Pupuk kandang (kotoran hewan)",
-          val  : fmt(pupuk, "kg") },
-        { bahan: "Dedak",
-          val  : fmt(dedak, "kg") },
-        { bahan: "Arang sekam / serbuk gergaji",
-          val  : fmt(sekam, "kg") },
-        { bahan: "Gula pasir / molase",
-          val  : gulaGram >= 1000
-                   ? fmt(gulaKg, "kg")
-                   : fmt(gulaGram, "gram") },
-        { bahan: "EM4",
-          val  : em4Ml >= 1000
-                   ? fmt(em4L, "L")
-                   : fmt(em4Ml, "ml") },
-        { bahan: "Air",
-          val  : fmt(airL, "L") }
-      ];
-    }
+      if (tipeKey === "kandang") {
+        const pupuk = r.pupukKandang * totalKg;
+        const dedak = r.dedak        * totalKg;
+        const sekam = r.sekam        * totalKg;
+        const gula  = r.gula         * totalKg;
+        const em4   = r.em4          * totalKg;
+        const air   = r.air          * totalKg;
 
-    function calcJerami(totalKg) {
-      const r = RASIO.jerami;
+        return [
+          { bahan: "Pupuk kandang (kotoran hewan)",
+            total: fmtBerat(pupuk),        sesi: fmtBerat(pupuk / s) },
+          { bahan: "Dedak",
+            total: fmtBerat(dedak),        sesi: fmtBerat(dedak / s) },
+          { bahan: "Arang sekam / serbuk gergaji",
+            total: fmtBerat(sekam),        sesi: fmtBerat(sekam / s) },
+          { bahan: "Gula pasir / molase",
+            total: fmtBerat(gula),         sesi: fmtBerat(gula / s) },
+          { bahan: "EM4",
+            total: fmtCair(em4),           sesi: fmtCair(em4 / s) },
+          { bahan: "Air",
+            total: fmtCair(air),           sesi: fmtCair(air / s) }
+        ];
+      } else {
+        const jerami = r.jerami * totalKg;
+        const dedak  = r.dedak  * totalKg;
+        const sekam  = r.sekam  * totalKg;
+        const gula   = r.gula   * totalKg;
+        const em4    = r.em4    * totalKg;
+        const air    = r.air    * totalKg;
 
-      const jerami   = r.jerami * totalKg;
-      const dedak    = r.dedak  * totalKg;
-      const sekam    = r.sekam  * totalKg;
-      const gulaKg   = r.gula   * totalKg;
-      const gulaGram = gulaKg * 1000;
-      const em4L     = r.em4    * totalKg;
-      const em4Ml    = em4L * 1000;
-      const airL     = r.air    * totalKg;
-
-      return [
-        { bahan: "Jerami padi",
-          val  : fmt(jerami, "kg") },
-        { bahan: "Dedak",
-          val  : fmt(dedak, "kg") },
-        { bahan: "Sekam",
-          val  : fmt(sekam, "kg") },
-        { bahan: "Gula pasir / molase",
-          val  : gulaGram >= 1000
-                   ? fmt(gulaKg, "kg")
-                   : fmt(gulaGram, "gram") },
-        { bahan: "EM4",
-          val  : em4Ml >= 1000
-                   ? fmt(em4L, "L")
-                   : fmt(em4Ml, "ml") },
-        { bahan: "Air",
-          val  : fmt(airL, "L") }
-      ];
+        return [
+          { bahan: "Jerami padi",
+            total: fmtBerat(jerami),       sesi: fmtBerat(jerami / s) },
+          { bahan: "Dedak",
+            total: fmtBerat(dedak),        sesi: fmtBerat(dedak / s) },
+          { bahan: "Sekam",
+            total: fmtBerat(sekam),        sesi: fmtBerat(sekam / s) },
+          { bahan: "Gula pasir / molase",
+            total: fmtBerat(gula),         sesi: fmtBerat(gula / s) },
+          { bahan: "EM4",
+            total: fmtCair(em4),           sesi: fmtCair(em4 / s) },
+          { bahan: "Air",
+            total: fmtCair(air),           sesi: fmtCair(air / s) }
+        ];
+      }
     }
 
     // ─────────────────────────────────────────
     // Konfigurasi tipe
     // ─────────────────────────────────────────
     const TIPE = {
-      kandang: {
-        label   : "Bokashi Pupuk Kandang",
-        subtitle: "Kebutuhan bahan baku untuk membuat bokashi pupuk kandang sesuai luas / jumlah tanaman Anda.",
-        calc    : calcKandang
-      },
-      jerami: {
-        label   : "Bokashi Jerami",
-        subtitle: "Kebutuhan bahan baku untuk membuat bokashi jerami sesuai luas / jumlah tanaman Anda.",
-        calc    : calcJerami
-      }
+      kandang: { label: "Bokashi Pupuk Kandang" },
+      jerami:  { label: "Bokashi Jerami" }
     };
 
     // ─────────────────────────────────────────
@@ -530,14 +605,12 @@
       doseHigh.classList.toggle("active", key === "high");
       render();
     }
-
     function getDoseValue() {
       return (basisLuasEl.checked ? DOSE.luas : DOSE.tanaman)[activeDoseKey];
     }
     function getDoseUnit() {
       return (basisLuasEl.checked ? DOSE.luas : DOSE.tanaman).unit;
     }
-
     function updateDoseBoxText() {
       const isLuas = basisLuasEl.checked;
       const cfg    = isLuas ? DOSE.luas : DOSE.tanaman;
@@ -548,7 +621,6 @@
       doseMedVal.textContent  = `${cfg.med} ${cfg.unit}`;
       doseHighVal.textContent = `${cfg.high} ${cfg.unit}`;
     }
-
     function showError(msg) {
       if (!msg) { errEl.classList.add("hide"); errEl.textContent = ""; return; }
       errEl.classList.remove("hide");
@@ -557,13 +629,18 @@
     function setInvalid(el, yes) {
       if (el) el.classList.toggle("invalid", !!yes);
     }
-
     function clearOutputs() {
       ["basisOut","tipeOut","luasOut","tanamanOut","dosisOut",
-       "totalKgOut","totalTonOut","karung25Out","perM2Out"]
+       "totalKgOut","totalTonOut","karung25Out","perM2Out",
+       "sesiOut","kgPerSesiOut"]
         .forEach(id => $(id).textContent = "-");
       bahanSubtitle.textContent = "-";
-      bahanTbody.innerHTML = "<tr><td colspan='2' style='color:#aaa;'>-</td></tr>";
+      sesiBanner.classList.add("hide");
+      sesiBanner.textContent = "";
+      bahanSesiTbody.innerHTML  =
+        "<tr><td colspan='2' style='color:#aaa;'>-</td></tr>";
+      bahanTotalTbody.innerHTML =
+        "<tr><td colspan='2' style='color:#aaa;'>-</td></tr>";
     }
 
     // ─────────────────────────────────────────
@@ -588,6 +665,11 @@
       setInvalid(jumlahTanamanEl, false);
       showError("");
 
+      // ── validasi sesi ──
+      const rawSesi = parseIdNumber(jumlahSesiEl.value);
+      const nSesi   = (Number.isFinite(rawSesi) && rawSesi >= 1)
+                      ? Math.round(rawSesi) : 1;
+
       const doseVal  = getDoseValue();
       const doseUnit = getDoseUnit();
       let totalKg    = NaN;
@@ -608,10 +690,8 @@
         luasOut.textContent    = `${fmt(A)} ha`;
         tanamanOut.textContent = "-";
         dosisOut.textContent   = `${doseVal} ${doseUnit}`;
-
-        // per m² — tampilkan gram saja agar mudah dibaca
         const gPerM2 = (doseVal * 1000 * 1000) / 10000;
-        perM2Out.textContent = `${fmt(gPerM2)} g/m²`;
+        perM2Out.textContent   = `${fmt(gPerM2)} g/m²`;
 
       } else {
         basisOut.textContent = "Jumlah tanaman";
@@ -630,18 +710,43 @@
         perM2Out.textContent   = "-";
       }
 
-      // ── output kanan — semua bulat ──
-      tipeOut.textContent     = tipe.label;
-      totalKgOut.textContent  = fmt(totalKg,  "kg");
-      totalTonOut.textContent = fmt(totalTon, "ton");
-      const karung25 = totalKg / 25;
-      karung25Out.textContent = `${fmt(karung25)} karung`;
+      const kgPerSesi = totalKg / nSesi;
 
-      // ── output kiri: bahan baku proporsional ──
-      bahanSubtitle.textContent = tipe.subtitle;
-      const rows = tipe.calc(totalKg);
-      bahanTbody.innerHTML = rows
-        .map(r => `<tr><td>${r.bahan}</td><td>${r.val}</td></tr>`)
+      // ── output kanan ──
+      tipeOut.textContent       = tipe.label;
+      totalKgOut.textContent    = fmt(totalKg,  "kg");
+      totalTonOut.textContent   = fmt(totalTon, "ton");
+      karung25Out.textContent   = fmt(totalKg / 25, "karung");
+      sesiOut.textContent       = fmt(nSesi, "sesi");
+      kgPerSesiOut.textContent  = fmt(kgPerSesi, "kg / sesi");
+
+      // ── banner sesi ──
+      sesiBanner.classList.remove("hide");
+      sesiBanner.innerHTML =
+        `Total bokashi yang dibutuhkan: <strong>${fmt(totalKg, "kg")}</strong>` +
+        (nSesi > 1
+          ? ` → dibagi <strong>${fmt(nSesi)} sesi</strong>, ` +
+            `setiap sesi cukup buat <strong>${fmt(kgPerSesi, "kg")} bokashi</strong>.`
+          : ` → dibuat <strong>1 sesi sekaligus</strong>.`);
+
+      // ── label kolom per sesi ──
+      labelPerSesi.textContent = nSesi > 1
+        ? `Per Sesi Pembuatan (${fmt(nSesi)} sesi)`
+        : "Per Sesi Pembuatan (1 sesi = total)";
+
+      // ── output kiri: bahan ──
+      bahanSubtitle.textContent =
+        `Kebutuhan bahan baku ${tipe.label.toLowerCase()} ` +
+        `untuk lahan / tanaman Anda.`;
+
+      const rows = calcBahan(totalKg, nSesi, tipeKey);
+
+      bahanSesiTbody.innerHTML = rows
+        .map(r => `<tr><td>${r.bahan}</td><td>${r.sesi}</td></tr>`)
+        .join("");
+
+      bahanTotalTbody.innerHTML = rows
+        .map(r => `<tr><td>${r.bahan}</td><td class="dimmed">${r.total}</td></tr>`)
         .join("");
     }
 
@@ -665,10 +770,12 @@
 
     luasHaEl.addEventListener("input",        render);
     jumlahTanamanEl.addEventListener("input",  render);
+    jumlahSesiEl.addEventListener("input",     render);
 
     ulangBtn.addEventListener("click", () => {
       luasHaEl.value        = "";
       jumlahTanamanEl.value = "";
+      jumlahSesiEl.value    = "1";
       basisLuasEl.checked   = true;
       tipeKandangEl.checked = true;
       activeDoseKey         = "med";
