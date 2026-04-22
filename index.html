@@ -475,8 +475,8 @@
     // Dosis
     // ─────────────────────────────────────────
     const DOSE = {
-      luas:    { unit: "ton/ha",    low: 10,  med: 15,  high: 25  },
-      tanaman: { unit: "g/tanaman", low: 112, med: 250, high: 450 }
+      luas:    { unit: "ton/ha",    low: 3,  med: 4,  high: 5  },
+      tanaman: { unit: "g/tanaman", low: 300, med: 400, high: 500 }
     };
     let activeDoseKey = "med";
 
@@ -488,7 +488,7 @@
     //   Dedak         :  10 kg
     //   Sekam/serbuk  : 100 kg
     //   Gula/molase   :   0,5 kg
-    //   EM4           :   1 L
+    //   EM4           :   0,2 L
     //   Air           :  20 L
     //
     // Bokashi Jerami — ref 1 batch = 410,5 kg padat
@@ -496,7 +496,7 @@
     //   Dedak         :  10 kg
     //   Sekam         : 200 kg
     //   Gula/molase   :   0,5 kg
-    //   EM4           :   1 L
+    //   EM4           :   0,2 L
     //   Air           :  20 L
     // ─────────────────────────────────────────
     const _K = 310.5;
@@ -508,7 +508,7 @@
         dedak        :  10   / _K,
         sekam        : 100   / _K,
         gula         :   0.5 / _K,
-        em4          :   1   / _K,
+        em4          :   0,2   / _K,
         air          :  20   / _K
       },
       jerami: {
@@ -516,7 +516,7 @@
         dedak  :  10   / _J,
         sekam  : 200   / _J,
         gula   :   0.5 / _J,
-        em4    :   1   / _J,
+        em4    :   0,2   / _J,
         air    :  20   / _J
       }
     };
